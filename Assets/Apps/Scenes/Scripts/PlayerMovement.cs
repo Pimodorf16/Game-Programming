@@ -27,6 +27,15 @@ public class PlayerMovement : MonoBehaviour
         movement = moveDirection.x * moveSpeed;
 
         animator.SetFloat("Speed", Mathf.Abs(movement));
+
+        if (landing == true)
+        {
+            if (Mathf.Abs(movement) > 0.01f)
+            {
+                StopCoroutine(Landing1());
+                StartCoroutine(Landing2());
+            }
+        }
     }
 
     private void FixedUpdate()
@@ -60,7 +69,15 @@ public class PlayerMovement : MonoBehaviour
             onAir = false;
             animator.SetBool("IsJumping", false);
             animator.SetBool("IsLanding", true);
-            StartCoroutine(Landing());
+            landing = true;
+            if(Mathf.Abs(movement) > 0.01f)
+            {
+                StartCoroutine(Landing2());
+            }
+            else
+            {
+                StartCoroutine(Landing1());
+            }
         }
     }
 
@@ -79,12 +96,17 @@ public class PlayerMovement : MonoBehaviour
         
     }
 
-    IEnumerator Landing()
+    IEnumerator Landing2()
     {
-        landing = true;
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(0.1f);
         animator.SetBool("IsLanding", false);
-        yield return new WaitForSeconds(0.5f);
+        landing = false;
+    }
+
+    IEnumerator Landing1()
+    {
+        yield return new WaitForSeconds(0.4f);
+        animator.SetBool("IsLanding", false);
         landing = false;
     }
 
