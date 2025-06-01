@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Cinemachine;
 
 public class DialogueManager : MonoBehaviour
 {
@@ -12,7 +13,9 @@ public class DialogueManager : MonoBehaviour
     public Animator dialogueBoxAnimator;
     public Animator nameBoxAnimator;
     public Animator portraitAnimator;
-    
+
+    public CinemachineVirtualCamera conversationCam;
+
     private Queue<string> sentences;
     
     // Start is called before the first frame update
@@ -23,9 +26,14 @@ public class DialogueManager : MonoBehaviour
 
     public void StartDialogue(Dialogue dialogue)
     {
+        FindObjectOfType<InteractionSystem>().interactAllow = false;
+        FindObjectOfType<InteractionSystem>().inDialogue = true;
+
         dialogueBoxAnimator.SetBool("IsOpen", true);
         nameBoxAnimator.SetBool("IsOpen", true);
         portraitAnimator.SetBool("IsOpen", true);
+
+        conversationCam.Priority = 30;
 
         nameText.text = dialogue.name;
         
@@ -64,10 +72,13 @@ public class DialogueManager : MonoBehaviour
 
     public void EndDialogue()
     {
-        Debug.Log("EndDialogue");
+        //Debug.Log("EndDialogue");
         dialogueBoxAnimator.SetBool("IsOpen", false);
         nameBoxAnimator.SetBool("IsOpen", false);
         portraitAnimator.SetBool("IsOpen", false);
+        conversationCam.Priority = 1;
+        FindObjectOfType<InteractionSystem>().inDialogue = false;
+        FindObjectOfType<InteractionSystem>().interactAllow = true;
     }
 
 }

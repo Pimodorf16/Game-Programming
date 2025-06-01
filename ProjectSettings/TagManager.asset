@@ -12,7 +12,7 @@ TagManager:
   - Water
   - UI
   - Ground
-  - 
+  - Interactable
   - 
   - 
   - 
@@ -38,12 +38,24 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 1830487901
+    locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: BehindGround
+    uniqueID: 2440162041
     locked: 0
   - name: Ground Tilemap
     uniqueID: 3730536991
     locked: 0
+  - name: EnvironmentBack
+    uniqueID: 3185053399
+    locked: 0
   - name: Player
     uniqueID: 931886949
+    locked: 0
+  - name: EnvironmentFront
+    uniqueID: 1979062517
     locked: 0

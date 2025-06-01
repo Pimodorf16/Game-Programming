@@ -72,7 +72,7 @@ public class CharacterController2D : MonoBehaviour
 	}
 
 
-	public void Move(float move, bool crouch, bool jump, bool landing)
+	public void Move(float move, bool crouch, bool jump, bool landing, bool inDialogue)
 	{
 		// If crouching, check to see if the character can stand up
 		if (!crouch)
@@ -125,6 +125,11 @@ public class CharacterController2D : MonoBehaviour
 					OnCrouchEvent.Invoke(false);
 				}
 			}
+
+			if(inDialogue == true)
+            {
+				move *= 0f;
+            }
 
 			// Move the character by finding the target velocity
 			Vector3 targetVelocity = new Vector2(move * 10f, m_Rigidbody2D.velocity.y);

@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
     public CharacterController2D controller;
+    public InteractionSystem interactionSystem;
 
     public Animator animator;
     
@@ -23,24 +24,30 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        moveDirection = move.action.ReadValue<Vector2>();
-        movement = moveDirection.x * moveSpeed;
-
-        animator.SetFloat("Speed", Mathf.Abs(movement));
-
-        if (landing == true)
+        if(interactionSystem.inDialogue == false)
         {
-            if (Mathf.Abs(movement) > 0.01f)
+            moveDirection = move.action.ReadValue<Vector2>();
+            movement = moveDirection.x * moveSpeed;
+
+            animator.SetFloat("Speed", Mathf.Abs(movement));
+
+            if (landing == true)
             {
-                StopCoroutine(Landing1());
-                StartCoroutine(Landing2());
+                if (Mathf.Abs(movement) > 0.01f)
+                {
+                    StopCoroutine(Landing1());
+                    StartCoroutine(Landing2());
+                }
             }
+        }else if(interactionSystem.inDialogue == true)
+        {
+            animator.SetFloat("Speed", 0);
         }
     }
 
     private void FixedUpdate()
     {
-        controller.Move(movement * Time.fixedDeltaTime, false, jumping, landing);
+        controller.Move(movement * Time.fixedDeltaTime, false, jumping, landing, interactionSystem.inDialogue);
         jumping = false;
     }
 
@@ -56,10 +63,13 @@ public class PlayerMovement : MonoBehaviour
 
     private void Jump(InputAction.CallbackContext obj)
     {
-        jumping = true;
-        landing = false;
-        animator.SetBool("IsJumping", true);
-        StartCoroutine(OnTheAir());
+        if(interactionSystem.inDialogue == false)
+        {
+            jumping = true;
+            landing = false;
+            animator.SetBool("IsJumping", true);
+            StartCoroutine(OnTheAir());
+        }
     }
 
     public void OnLanding()
