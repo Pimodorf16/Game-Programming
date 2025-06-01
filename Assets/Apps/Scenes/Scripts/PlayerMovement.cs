@@ -105,7 +105,7 @@ public class PlayerMovement : MonoBehaviour
 
     IEnumerator Landing1()
     {
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(0.5f);
         animator.SetBool("IsLanding", false);
         landing = false;
     }
