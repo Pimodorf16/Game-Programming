@@ -14,12 +14,14 @@ public class PlayerMovement : MonoBehaviour
     public InputActionReference jump;
 
     public Vector2 moveDirection;
+    public Vector2 selectDirection;
     public float moveSpeed = 40f;
     private float movement = 0f;
     private bool jumping = false;
     private bool onAir = false;
     public bool startOnAir = false;
     public bool landing = false;
+    public bool selecting = false;
 
     // Update is called once per frame
     void Update()
@@ -42,6 +44,15 @@ public class PlayerMovement : MonoBehaviour
         }else if(interactionSystem.inDialogue == true)
         {
             animator.SetFloat("Speed", 0);
+            if(interactionSystem.inSelection == true)
+            {
+                selectDirection = move.action.ReadValue<Vector2>();
+                if(selecting == false)
+                {
+                    selecting = true;
+                    StartCoroutine(Select());
+                }
+            }
         }
     }
 
@@ -124,5 +135,18 @@ public class PlayerMovement : MonoBehaviour
     {
         yield return new WaitForSeconds(0.2f);
         onAir = true;
+    }
+
+    IEnumerator Select()
+    {
+        if(selectDirection.x * 10f > 0f)
+        {
+            FindObjectOfType<DialogueManager>().SelectRight();
+        }else if(selectDirection.x < 0f)
+        {
+            FindObjectOfType<DialogueManager>().SelectLeft();
+        }
+        yield return new WaitForSeconds(0.1f);
+        selecting = false;
     }
 }

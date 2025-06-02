@@ -23,6 +23,8 @@ public class InteractionSystem : MonoBehaviour
     [Header("Others")]
     public bool interactAllow = true;
     public bool inDialogue = false;
+    public bool inSelection = false;
+    public bool canSelect = false;
     public bool inspect = false;
 
     private void Start()
@@ -49,7 +51,13 @@ public class InteractionSystem : MonoBehaviour
                 detectedObject.GetComponent<InteractableObjects>().Interact();
             }else if(inDialogue == true)
             {
-                FindObjectOfType<DialogueManager>().DisplayNextSentence();
+                if(inSelection == true)
+                {
+                    FindObjectOfType<DialogueManager>().SelectConfirm();
+                }else if(inSelection == false)
+                {
+                    FindObjectOfType<DialogueManager>().DisplayNextSentence();
+                }
             }
         }
     }
