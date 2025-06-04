@@ -18,15 +18,16 @@ public class PlayerMovement : MonoBehaviour
     public float moveSpeed = 40f;
     private float movement = 0f;
     private bool jumping = false;
-    private bool onAir = false;
+    public bool onAir = false;
     public bool startOnAir = false;
     public bool landing = false;
     public bool selecting = false;
+    public bool groundAttacking = false;
 
     // Update is called once per frame
     void Update()
     {
-        if(interactionSystem.inDialogue == false)
+        if(interactionSystem.inDialogue == false && groundAttacking == false)
         {
             moveDirection = move.action.ReadValue<Vector2>();
             movement = moveDirection.x * moveSpeed;
@@ -53,12 +54,21 @@ public class PlayerMovement : MonoBehaviour
                     StartCoroutine(Select());
                 }
             }
+        }else if (groundAttacking == true)
+        {
+            animator.SetFloat("Speed", 0);
+            if (landing == true)
+            {
+                StopCoroutine(Landing1());
+
+                animator.SetBool("IsLanding", false);
+            }
         }
     }
 
     private void FixedUpdate()
     {
-        controller.Move(movement * Time.fixedDeltaTime, false, jumping, landing, interactionSystem.inDialogue);
+        controller.Move(movement * Time.fixedDeltaTime, false, jumping, landing, interactionSystem.inDialogue, groundAttacking);
         jumping = false;
     }
 
@@ -76,10 +86,13 @@ public class PlayerMovement : MonoBehaviour
     {
         if(interactionSystem.inDialogue == false)
         {
-            jumping = true;
-            landing = false;
-            animator.SetBool("IsJumping", true);
-            StartCoroutine(OnTheAir());
+            if(groundAttacking == false)
+            {
+                jumping = true;
+                landing = false;
+                animator.SetBool("IsJumping", true);
+                StartCoroutine(OnTheAir());
+            }
         }
     }
 
