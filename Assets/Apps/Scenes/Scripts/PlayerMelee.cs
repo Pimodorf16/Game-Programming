@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 public class PlayerMelee : MonoBehaviour
 {
     public PlayerMovement playerMovement;
+    public AnimatorFunctions animatorFunctions;
     public Animator playerAnimator;
     public InputActionReference attack;
     
@@ -19,7 +20,7 @@ public class PlayerMelee : MonoBehaviour
     private float cooldownTimer = 0f;
     private bool inCooldown = false;
 
-    private bool groundAttackOn = false;
+    public bool groundAttackOn = false;
 
     private void OnEnable()
     {
@@ -69,17 +70,6 @@ public class PlayerMelee : MonoBehaviour
         playerAnimator.SetTrigger("Attack");
 
         StartCoroutine(GroundAttackWait());
-    }
-
-    void GroundAttackDamageOn()
-    {
-        groundAttackOn = true;
-    }
-
-    void GroundAttackDamagedOff()
-    {
-        groundAttackOn = false;
-        Debug.Log("DamageOFF");
     }
 
     IEnumerator GroundAttackWait()

@@ -4,12 +4,18 @@ using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour
 {
-    public float maxHealth;
-    public float currentHealth;
+    private Enemy enemyController;
+
+    Rigidbody2D rb;
+
+    public float maxHealth = 3f;
+    [SerializeField]private float currentHealth;
 
     // Start is called before the first frame update
     void Start()
     {
+        enemyController = GetComponent<Enemy>();
+        rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
     }
 
@@ -19,9 +25,11 @@ public class EnemyHealth : MonoBehaviour
         
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float damage/*, Vector2 knockbackDirection, float knockbackForce*/)
     {
-        currentHealth -= amount;
+        currentHealth -= damage;
+
+        //rb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
 
         if(currentHealth <= 0)
         {
@@ -31,6 +39,7 @@ public class EnemyHealth : MonoBehaviour
 
     void EnemyDie()
     {
+        enemyController.currentState = Enemy.EnemyState.Dead;
         Debug.Log("enemy died");
     }
 }

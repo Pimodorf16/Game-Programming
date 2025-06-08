@@ -6,7 +6,7 @@ AnimationClip:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: kibou_jump
+  m_Name: Soldier_Jump
   serializedVersion: 7
   m_Legacy: 0
   m_Compressed: 0
@@ -21,11 +21,11 @@ AnimationClip:
   - serializedVersion: 2
     curve:
     - time: 0
-      value: {fileID: -1535910590, guid: ec6f68ae75ae4f542969a6e98a65f447, type: 3}
+      value: {fileID: 1418903563, guid: 9533b9a591c24444a8174155004748ba, type: 3}
     - time: 0.05
-      value: {fileID: -484053753, guid: ec6f68ae75ae4f542969a6e98a65f447, type: 3}
+      value: {fileID: -1697055169, guid: 9533b9a591c24444a8174155004748ba, type: 3}
     - time: 0.33333334
-      value: {fileID: 541986469, guid: ec6f68ae75ae4f542969a6e98a65f447, type: 3}
+      value: {fileID: -231537329, guid: 9533b9a591c24444a8174155004748ba, type: 3}
     attribute: m_Sprite
     path: 
     classID: 212
@@ -48,9 +48,9 @@ AnimationClip:
       isIntCurve: 0
       isSerializeReferenceCurve: 0
     pptrCurveMapping:
-    - {fileID: -1535910590, guid: ec6f68ae75ae4f542969a6e98a65f447, type: 3}
-    - {fileID: -484053753, guid: ec6f68ae75ae4f542969a6e98a65f447, type: 3}
-    - {fileID: 541986469, guid: ec6f68ae75ae4f542969a6e98a65f447, type: 3}
+    - {fileID: 1418903563, guid: 9533b9a591c24444a8174155004748ba, type: 3}
+    - {fileID: -1697055169, guid: 9533b9a591c24444a8174155004748ba, type: 3}
+    - {fileID: -231537329, guid: 9533b9a591c24444a8174155004748ba, type: 3}
   m_AnimationClipSettings:
     serializedVersion: 2
     m_AdditiveReferencePoseClip: {fileID: 0}
