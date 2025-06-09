@@ -28,6 +28,12 @@ public class EnemyMovement : MonoBehaviour
     public float followSpeed = 20f;
     public Transform followTarget;
 
+    [Header("Knockback")]
+    public float knockbackDuration = 0.5f;
+    public float knockbackGravityScale = 3f;
+    private float originalGravityScale;
+    private bool isKnockedBack = false;
+
     [Header("Raycast Detection")]
     public Vector2 playerVisionBoxSize = new Vector2(8f, 4f);
     public float wallCheckDistance = 0.5f;
@@ -38,6 +44,8 @@ public class EnemyMovement : MonoBehaviour
     public LayerMask groundLayer;
     public LayerMask playerLayer;
 
+    EnemyHealth enemyHealth;
+    
     Rigidbody2D rb;
     Animator animator;
 
@@ -76,6 +84,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void Start()
     {
+        enemyHealth = GetComponent<EnemyHealth>();
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         followTarget = null;
@@ -102,7 +111,12 @@ public class EnemyMovement : MonoBehaviour
     {
         PerformDetections();
 
-        if(isPatrolling)
+        if (isKnockedBack)
+        {
+            return;
+        }
+
+        if (isPatrolling)
         {
             Patrol();
         }
@@ -113,6 +127,39 @@ public class EnemyMovement : MonoBehaviour
         else if (followTarget != null)
         {
             Follow();
+        }
+    }
+
+    public void ApplyKnockback(float force, Vector2 direction)
+    {
+        StopAllCoroutines();
+        StartCoroutine(KnockbackCoroutine(force, direction));
+    }
+
+    private IEnumerator KnockbackCoroutine(float force, Vector2 direction)
+    {
+        originalGravityScale = rb.gravityScale;
+        rb.gravityScale = knockbackGravityScale;
+        isKnockedBack = true;
+
+        rb.velocity = Vector2.zero;
+        rb.AddForce(direction * force, ForceMode2D.Impulse);
+
+        yield return new WaitForSeconds(knockbackDuration);
+
+        while (!isGrounded)
+        {
+            yield return null;
+        }
+
+        if(enemyHealth.GetAliveStatus() == false)
+        {
+            Died();
+        }
+        else
+        {
+            rb.gravityScale = originalGravityScale;
+            isKnockedBack = false;
         }
     }
 
@@ -144,6 +191,16 @@ public class EnemyMovement : MonoBehaviour
         isMovingToPosition = false;
         isPatrolling = false;
         followTarget = playerTarget;
+    }
+
+    public void Died()
+    {
+        isMovingToPosition = false;
+        isPatrolling = false;
+        followTarget = null;
+        rb.velocity = Vector2.zero;
+        GetComponent<Collider2D>().enabled = false;
+        rb.bodyType = RigidbodyType2D.Static;
     }
 
     void PerformDetections()
@@ -228,6 +285,85 @@ public class EnemyMovement : MonoBehaviour
             //alt//rb.velocity = new Vector2(moveDirection * followSpeed * Time.fixedDeltaTime, rb.velocity.y);
 
             if((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
+            {
+                Flip();
+            }
+        }
+    }
+
+    public void MoveTowards(Transform target, float speed)
+    {
+        if (target != null)
+        {
+            bool canJump = Time.time >= lastJumpTime + jumpCooldown;
+
+            if (isTouchingWall && isGrounded && canJump)
+            {
+                Jump();
+            }
+
+            float moveDirection = (target.position.x > transform.position.x) ? 1 : -1;
+
+            Move(speed * moveDirection * Time.fixedDeltaTime);
+
+            if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
+            {
+                Flip();
+            }
+        }
+    }
+
+    public void MoveAwayFrom(Transform target, float speed)
+    {
+        if (target != null)
+        {
+            bool canJump = Time.time >= lastJumpTime + jumpCooldown;
+
+            if (isTouchingWall && isGrounded && canJump)
+            {
+                Jump();
+            }
+
+            float moveDirection = (target.position.x < transform.position.x) ? 1 : -1;
+
+            Move(speed * moveDirection * Time.fixedDeltaTime);
+
+            if ((moveDirection < 0 && !isFacingRight) || (moveDirection > 0 && isFacingRight))
+            {
+                Flip();
+            }
+        }
+    }
+
+    public void FaceTarget(Transform target)
+    {
+        if (target != null)
+        {
+            float faceDirection = (target.position.x < transform.position.x) ? 1 : -1;
+
+            if ((faceDirection < 0 && !isFacingRight) || (faceDirection > 0 && isFacingRight))
+            {
+                Flip();
+            }
+        }
+    }
+
+    public void RunAwayFrom(Transform target, float speed)
+    {
+        if (target != null)
+        {
+            bool canJump = Time.time >= lastJumpTime + jumpCooldown;
+
+            if (isTouchingWall && isGrounded && canJump)
+            {
+                Jump();
+            }
+
+            float moveDirection = (target.position.x < transform.position.x) ? 1 : -1;
+
+            Move(speed * moveDirection * Time.fixedDeltaTime);
+
+            if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
             {
                 Flip();
             }

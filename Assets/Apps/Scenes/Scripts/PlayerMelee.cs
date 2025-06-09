@@ -15,6 +15,7 @@ public class PlayerMelee : MonoBehaviour
     public LayerMask enemyMask;
 
     public int attackDamage = 1;
+    public float attackKnockbackForce = 2f;
 
     public float cooldownTime = .34f;
     private float cooldownTimer = 0f;
@@ -57,7 +58,10 @@ public class PlayerMelee : MonoBehaviour
             Collider2D[] enemiesInRange = Physics2D.OverlapCircleAll(groundAttackOrigin.position, attackRadius, enemyMask);
             foreach (var enemy in enemiesInRange)
             {
-                enemy.GetComponent<EnemyHealth>().TakeDamage(attackDamage);
+                Vector2 direction = (enemy.transform.position - transform.position).normalized;
+                direction.y += Random.Range(0.3f, 0.9f);
+                
+                enemy.GetComponent<EnemyHealth>().TakeDamage(attackDamage, attackKnockbackForce, direction, transform);
             }
             Debug.Log("Attacking");
         }

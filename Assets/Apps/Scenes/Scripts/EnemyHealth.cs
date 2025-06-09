@@ -4,42 +4,69 @@ using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour
 {
-    private Enemy enemyController;
-
-    Rigidbody2D rb;
+    private Enemy enemy;
+    private EnemyMovement enemyMovement;
 
     public float maxHealth = 3f;
     [SerializeField]private float currentHealth;
+    public float damageCooldown = 0.5f;
+
+    public bool isTakingDamage = false;
+    private bool isAlive = true;
+
+    public bool GetAliveStatus()
+    {
+        return isAlive;
+    }
+
+    public float GetCurrentHealthPercentage()
+    {
+        return currentHealth / maxHealth;
+    }
 
     // Start is called before the first frame update
     void Start()
     {
-        enemyController = GetComponent<Enemy>();
-        rb = GetComponent<Rigidbody2D>();
+        enemy = GetComponent<Enemy>();
+        enemyMovement = GetComponent<EnemyMovement>();
         currentHealth = maxHealth;
     }
 
-    // Update is called once per frame
-    void Update()
+    public void TakeDamage(float damage, float knockbackForce, Vector2 knockbackDirection, Transform attacker)
     {
-        
-    }
+        if (isTakingDamage)
+        {
+            return;
+        }
 
-    public void TakeDamage(float damage/*, Vector2 knockbackDirection, float knockbackForce*/)
-    {
+        isTakingDamage = true;
+        StartCoroutine(DamageCooldown());
+
+        if (enemy.currentState == Enemy.EnemyState.Dead) return;
+
         currentHealth -= damage;
+        enemyMovement.ApplyKnockback(knockbackForce, knockbackDirection);
+        enemy.WasAttacked(attacker);
 
-        //rb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
-
-        if(currentHealth <= 0)
+        if (currentHealth <= 0)
         {
             EnemyDie();
+        }
+        else
+        {
+            enemy.PlayHurtAnimation();
         }
     }
 
     void EnemyDie()
     {
-        enemyController.currentState = Enemy.EnemyState.Dead;
-        Debug.Log("enemy died");
+        isAlive = false;
+        enemy.ChangeState(Enemy.EnemyState.Dead);
+    }
+
+    IEnumerator DamageCooldown()
+    {
+        yield return new WaitForSeconds(damageCooldown);
+        isTakingDamage = false;
     }
 }

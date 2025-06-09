@@ -14,7 +14,7 @@ public class Enemy : MonoBehaviour
 
     public enum EnemyState
     {
-        Idle, Patrol, Searching, Returning, Follow, Attack, Dead
+        Idle, Patrol, Searching, Returning, Follow, Engage, Flee, Attack, Dead
     }
 
     [Header("State Machine")]
@@ -23,6 +23,12 @@ public class Enemy : MonoBehaviour
     [Header("Behaviour Options")]
     public bool isStationary = false;
     public PostChaseBehaviour postChaseAction;
+
+    [Header("Decisions")]
+    private float timeSinceLastDecision = 0f;
+    public float decisionCooldown = 1.0f;
+
+    public float fleeHealthPercentage = 0.25f;
 
     private EnemyHealth enemyHealth;
     private EnemyMovement enemyMovement;
@@ -54,10 +60,41 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    public void WasAttacked(Transform attacker)
+    {
+        if (!enemyMovement.CanSeePlayer())
+        {
+            ChangeState(EnemyState.Follow, attacker);
+        }
+    }
+
+    public void PlayHurtAnimation()
+    {
+        animator.SetTrigger("Hurt");
+    }
+
+    void DecideNextAction(Transform player)
+    {
+        if(enemyCombat.CanAttack() && Vector2.Distance(transform.position, player.position) < enemyCombat.attackRange)
+        {
+            if(Random.value > 0.3f)
+            {
+                ChangeState(EnemyState.Attack);
+            }
+        }
+    }
+
     private void Update()
     {
+        bool isAlive = enemyHealth.GetAliveStatus();
         bool canSeePlayer = enemyMovement.CanSeePlayer();
         Transform playerTarget = enemyMovement.GetSeenPlayer();
+
+        if(isAlive == false)
+        {
+            ChangeState(EnemyState.Dead);
+            return;
+        }
 
         switch (currentState)
         {
@@ -104,14 +141,62 @@ public class Enemy : MonoBehaviour
                 }
                 break;
             case EnemyState.Follow:
+                if(enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
+                {
+                    ChangeState(EnemyState.Flee);
+                    break;
+                }
+                
                 if (canSeePlayer)
                 {
                     lastKnownPlayerPosition = enemyMovement.GetSeenPlayer().position;
+
+                    if (Vector2.Distance(transform.position, playerTarget.position) < enemyCombat.engageDistance)
+                    {
+                        ChangeState(EnemyState.Engage);
+                    }
                 }
                 else
                 {
                     ChangeState(EnemyState.Searching);
                 }
+                break;
+            case EnemyState.Engage:
+                if (enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
+                {
+                    ChangeState(EnemyState.Flee);
+                    break;
+                }
+
+                if (!canSeePlayer || Vector2.Distance(transform.position, playerTarget.position) > enemyCombat.disengageDistance)
+                {
+                    ChangeState(EnemyState.Follow);
+                    break;
+                }
+
+                float distanceToPlayer = Vector2.Distance(transform.position, playerTarget.position);
+                if(distanceToPlayer > enemyCombat.optimalDistance + 1f)
+                {
+                    enemyMovement.MoveTowards(playerTarget, enemyMovement.moveSpeed);
+                }else if(distanceToPlayer < enemyCombat.optimalDistance - 1f)
+                {
+                    enemyMovement.MoveAwayFrom(playerTarget, enemyMovement.moveSpeed);
+                }
+                else
+                {
+                    enemyMovement.StopMoving();
+                    enemyMovement.FaceTarget(playerTarget);
+                }
+
+                timeSinceLastDecision += Time.deltaTime;
+                if(timeSinceLastDecision > decisionCooldown)
+                {
+                    DecideNextAction(playerTarget);
+                    timeSinceLastDecision = 0f;
+                }
+                break;
+            case EnemyState.Flee:
+                enemyMovement.RunAwayFrom(playerTarget, enemyMovement.followSpeed);
                 break;
             case EnemyState.Attack:
                 break;
@@ -122,9 +207,9 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    void ChangeState(EnemyState newState)
+    public void ChangeState(EnemyState newState, Transform forcedTarget = null)
     {
-        if (currentState == newState) return;
+        if (currentState == newState && forcedTarget == null) return;
 
         currentState = newState;
 
@@ -152,14 +237,40 @@ public class Enemy : MonoBehaviour
                 enemyMovement.MoveToPosition(originPosition);
                 break;
             case EnemyState.Follow:
-                enemyMovement.StartFollowing(enemyMovement.GetSeenPlayer());
+                Transform target = forcedTarget;
+                if(target == null)
+                {
+                    target = enemyMovement.GetSeenPlayer();
+                }
+                enemyMovement.StartFollowing(target);
+                break;
+            case EnemyState.Engage:
+                break;
+            case EnemyState.Flee:
                 break;
             case EnemyState.Attack:
+                animator.SetTrigger("Attack");
+                enemyCombat.GroundAttack();
+                ChangeState(EnemyState.Engage);
                 break;
             case EnemyState.Dead:
+                animator.SetBool("Dead", true);
+                PlayHurtAnimation();
+                this.enabled = false;
                 break;
             default:
                 break;
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            if(currentState != EnemyState.Follow && currentState != EnemyState.Attack && currentState != EnemyState.Dead)
+            {
+                ChangeState(EnemyState.Follow, collision.transform);
+            }
         }
     }
 }

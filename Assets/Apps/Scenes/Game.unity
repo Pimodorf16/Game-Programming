@@ -849,7 +849,7 @@ GameObject:
   - component: {fileID: 204839910}
   m_Layer: 3
   m_Name: Kibou
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1057,6 +1057,7 @@ MonoBehaviour:
   m_GroundCheck: {fileID: 1357357443}
   m_CeilingCheck: {fileID: 113409175}
   m_CrouchDisableCollider: {fileID: 0}
+  m_Grounded: 0
   playerMovement: {fileID: 204839906}
   OnLandEvent:
     m_PersistentCalls:
@@ -1141,8 +1142,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfcbf9a1dc1c75b41939d19b7e51ced5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 12
+  knockbackDuration: 0.5
+  knockbackGravityScale: 3
+  currentHealth: 0
   maxHealth: 12
+  damageCooldown: 0.5
+  isTakingDamage: 0
 --- !u!114 &204839914
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1165,6 +1170,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   attackDamage: 1
+  attackKnockbackForce: 5
   cooldownTime: 0.5
   groundAttackOn: 0
 --- !u!114 &204839915
@@ -3907,6 +3913,37 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1238497813
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1238497814}
+  m_Layer: 8
+  m_Name: GroundAttackOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1238497814
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238497813}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.658, y: 0.13, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1771687657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1344748712
 GameObject:
   m_ObjectHideFlags: 0
@@ -53606,7 +53643,7 @@ GameObject:
   - component: {fileID: 1771687663}
   - component: {fileID: 1771687662}
   - component: {fileID: 1771687659}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Soldier
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -53622,12 +53659,13 @@ Transform:
   m_GameObject: {fileID: 1771687656}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: -1.55, z: 0}
+  m_LocalPosition: {x: -11, y: -1.55, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1781846638}
   - {fileID: 1094379042}
+  - {fileID: 1238497814}
   m_Father: {fileID: 241416284}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &1771687658
@@ -53777,10 +53815,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e535ede698161d54d971d2418e7f7d56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  engageDistance: 5
+  optimalDistance: 2
+  disengageDistance: 8
+  groundAttackOrigin: {fileID: 1238497814}
+  canAttack: 1
+  attackRadius: 0.65
+  attackRange: 1.5
+  attackRate: 1
+  attackDamage: 1
+  attackKnockbackForce: 5
+  playerMask:
+    serializedVersion: 2
+    m_Bits: 8
   isRanged: 0
   arrowPrefab: {fileID: 0}
   firePoint: {fileID: 0}
-  attackRate: 1
 --- !u!114 &1771687663
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53793,8 +53843,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 737123523dcffc7488594f470c291f34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 3
+  maxHealth: 10
   currentHealth: 3
+  damageCooldown: 0.5
+  isTakingDamage: 0
 --- !u!114 &1771687664
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53812,8 +53864,11 @@ MonoBehaviour:
   jumpForce: 5.5
   jumpCooldown: 1
   movementSmoothing: 0.05
+  moveMultiplier: 10
   followSpeed: 15
   followTarget: {fileID: 0}
+  knockbackDuration: 0.4
+  knockbackGravityScale: 3
   playerVisionBoxSize: {x: 10, y: 4}
   wallCheckDistance: 1.5
   ledgeCheckDistance: 1
@@ -53842,6 +53897,8 @@ MonoBehaviour:
   currentState: 0
   isStationary: 1
   postChaseAction: 0
+  decisionCooldown: 1
+  fleeHealthPercentage: 0.25
   animator: {fileID: 1771687659}
 --- !u!1 &1781846637
 GameObject:
