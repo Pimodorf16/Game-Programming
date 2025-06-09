@@ -14,25 +14,37 @@ public class EnemyMovement : MonoBehaviour
     public StartingDirection startingDirection = StartingDirection.Left;
     
     [Header("Movement")]
-    public float moveSpeed = 1f;
-    public float jumpForce = 8f;
+    public float moveSpeed = 10f;
+    public float jumpForce = 5.5f;
+    public float jumpCooldown = 1f;
+    [Range(0, .3f)] [SerializeField] private float movementSmoothing = .05f;
+    [SerializeField] private float moveMultiplier = 10f;
+    private Vector3 velocity = Vector3.zero;
 
     [Header("Patrol Settings")]
 
 
     [Header("Follow Settings")]
-    public float followSpeed = 2f;
+    public float followSpeed = 20f;
     public Transform followTarget;
 
     [Header("Raycast Detection")]
+    public Vector2 playerVisionBoxSize = new Vector2(8f, 4f);
     public float wallCheckDistance = 0.5f;
     public float ledgeCheckDistance = 1f;
-    public float playerSightDistance = 10f;
+    public float groundCheckRadius = 1f;
     public Transform castPoint;
+    public Transform groundCheck;
     public LayerMask groundLayer;
     public LayerMask playerLayer;
 
     Rigidbody2D rb;
+    Animator animator;
+
+    Transform seenPlayer;
+
+    float lastJumpTime = -10f;
+
     bool isFacingRight = true;
     bool isPatrolling = false;
     bool isMovingToPosition = false;
@@ -40,15 +52,13 @@ public class EnemyMovement : MonoBehaviour
     bool isTouchingWall;
     bool isNearLedge;
     bool canSeePlayer;
+    bool isGrounded;
 
     Vector3 destination;
 
     public void SetFacingDirection(bool faceRight)
     {
-        if(faceRight && !isFacingRight)
-        {
-            Flip();
-        }else if(!faceRight && isFacingRight)
+        if(isFacingRight != faceRight)
         {
             Flip();
         }
@@ -59,14 +69,15 @@ public class EnemyMovement : MonoBehaviour
         return canSeePlayer;
     }
 
-    public Transform GetPlayerTarget()
+    public Transform GetSeenPlayer()
     {
-        return canSeePlayer ? followTarget : null;
+        return seenPlayer;
     }
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
         followTarget = null;
         isFacingRight = true;
 
@@ -82,6 +93,8 @@ public class EnemyMovement : MonoBehaviour
 
     private void Update()
     {
+        animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
+        
         DrawDebugRays();
     }
 
@@ -100,17 +113,6 @@ public class EnemyMovement : MonoBehaviour
         else if (followTarget != null)
         {
             Follow();
-        }
-    }
-
-    void MoveTowardsDestination()
-    {
-        float moveDirection = (destination.x > transform.position.x) ? 1 : -1;
-        rb.velocity = new Vector2(moveDirection * moveSpeed, rb.velocity.y);
-
-        if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
-        {
-            Flip();
         }
     }
 
@@ -158,17 +160,21 @@ public class EnemyMovement : MonoBehaviour
         RaycastHit2D ledgeHit = Physics2D.Raycast(ledgeRayOrigin, Vector2.down, ledgeCheckDistance, groundLayer);
         isNearLedge = ledgeHit.collider == null;
 
+        //Detect Ground
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
         //Detect Player
-        RaycastHit2D playerHit = Physics2D.Raycast(castPoint.position, castDirection, playerSightDistance, playerLayer);
-        canSeePlayer = playerHit.collider != null;
+        Vector2 boxCenter = (Vector2)castPoint.position + new Vector2(castDirection.x * playerVisionBoxSize.x / 2, 0);
+        Collider2D playerCollider = Physics2D.OverlapBox(boxCenter, playerVisionBoxSize, 0f, playerLayer);
+        canSeePlayer = playerCollider != null;
 
         if (canSeePlayer)
         {
-            followTarget = playerHit.transform;
+            seenPlayer = playerCollider.transform;
         }
         else
         {
-            followTarget = null;
+            seenPlayer = null;
         }
     }
 
@@ -180,23 +186,46 @@ public class EnemyMovement : MonoBehaviour
         }
 
         float moveDirection = isFacingRight ? 1 : -1;
-        rb.velocity = new Vector2(moveSpeed * moveDirection, rb.velocity.y);
+        Move(moveSpeed * moveDirection * Time.fixedDeltaTime);
+
+        //alt//rb.velocity = new Vector2(moveSpeed * moveDirection * Time.fixedDeltaTime, rb.velocity.y);
+    }
+
+    void MoveTowardsDestination()
+    {
+        bool canJump = Time.time >= lastJumpTime + jumpCooldown;
+
+        if (isTouchingWall && isGrounded && canJump)
+        {
+            Jump();
+        }
+
+        float moveDirection = (destination.x > transform.position.x) ? 1 : -1;
+
+        Move(moveSpeed * moveDirection * Time.fixedDeltaTime);
+        //alt//rb.velocity = new Vector2(moveDirection * moveSpeed * Time.fixedDeltaTime, rb.velocity.y);
+
+        if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
+        {
+            Flip();
+        }
     }
 
     void Follow()
     {
         if(followTarget != null)
         {
-            if (isTouchingWall)
+            bool canJump = Time.time >= lastJumpTime + jumpCooldown;
+            
+            if (isTouchingWall && isGrounded && canJump)
             {
-                if(followTarget.position.y > transform.position.y)
-                {
-                    Jump();
-                }
+                Jump();
             }
 
             float moveDirection = (followTarget.position.x > transform.position.x) ? 1 : -1;
-            rb.velocity = new Vector2(moveDirection * followSpeed, rb.velocity.y);
+
+            Move(followSpeed * moveDirection * Time.fixedDeltaTime);
+            //alt//rb.velocity = new Vector2(moveDirection * followSpeed * Time.fixedDeltaTime, rb.velocity.y);
 
             if((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
             {
@@ -217,6 +246,14 @@ public class EnemyMovement : MonoBehaviour
     void Jump()
     {
         rb.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
+
+        lastJumpTime = Time.time;
+    }
+
+    public void Move(float move)
+    {
+        Vector3 targetVelocity = new Vector2(move * moveMultiplier, rb.velocity.y);
+        rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref velocity, movementSmoothing);
     }
 
     void DrawDebugRays()
@@ -225,13 +262,23 @@ public class EnemyMovement : MonoBehaviour
 
         Color wallRayColor = isTouchingWall ? Color.red : Color.green;
         Color ledgeRayColor = isNearLedge ? Color.red : Color.green;
-        Color playerRayColor = canSeePlayer ? Color.magenta : Color.cyan;
 
         Debug.DrawRay(castPoint.position, castDirection * wallCheckDistance, wallRayColor);
 
         Vector2 ledgeRayOrigin = castPoint.position + (Vector3)(castDirection * wallCheckDistance);
         Debug.DrawRay(ledgeRayOrigin, Vector2.down * ledgeCheckDistance, ledgeRayColor);
+    }
 
-        Debug.DrawRay(castPoint.position, castDirection * playerSightDistance, playerRayColor);
+    private void OnDrawGizmos()
+    {
+        if (castPoint == null) return;
+
+        Gizmos.color = Color.cyan;
+        Vector2 castDirection = isFacingRight ? Vector2.right : Vector2.left;
+
+        Vector3 boxCenter = castPoint.position + (Vector3)(castDirection * (playerVisionBoxSize.x / 2));
+        Gizmos.DrawWireCube(boxCenter, playerVisionBoxSize);
+
+        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
 }

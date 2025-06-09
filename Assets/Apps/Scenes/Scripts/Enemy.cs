@@ -57,7 +57,7 @@ public class Enemy : MonoBehaviour
     private void Update()
     {
         bool canSeePlayer = enemyMovement.CanSeePlayer();
-        Transform playerTarget = enemyMovement.GetPlayerTarget();
+        Transform playerTarget = enemyMovement.GetSeenPlayer();
 
         switch (currentState)
         {
@@ -106,7 +106,7 @@ public class Enemy : MonoBehaviour
             case EnemyState.Follow:
                 if (canSeePlayer)
                 {
-                    lastKnownPlayerPosition = playerTarget.position;
+                    lastKnownPlayerPosition = enemyMovement.GetSeenPlayer().position;
                 }
                 else
                 {
@@ -152,7 +152,7 @@ public class Enemy : MonoBehaviour
                 enemyMovement.MoveToPosition(originPosition);
                 break;
             case EnemyState.Follow:
-                enemyMovement.StartFollowing(enemyMovement.GetPlayerTarget());
+                enemyMovement.StartFollowing(enemyMovement.GetSeenPlayer());
                 break;
             case EnemyState.Attack:
                 break;
