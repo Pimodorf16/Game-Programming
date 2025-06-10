@@ -13,19 +13,6 @@ public class LevelManager : MonoBehaviour
 
     public float transitionTime = 1f;
 
-    private void Awake()
-    {
-        if(Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-
     public void LoadScene(string sceneName)
     {
         StartCoroutine(Load(sceneName));
@@ -37,6 +24,6 @@ public class LevelManager : MonoBehaviour
 
         yield return new WaitForSeconds(transitionTime);
 
-        SceneManager.LoadScene(sceneName);
+        SceneManager.LoadSceneAsync(sceneName);
     }
 }

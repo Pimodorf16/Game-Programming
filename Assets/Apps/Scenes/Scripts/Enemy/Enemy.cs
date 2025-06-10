@@ -47,6 +47,8 @@ public class Enemy : MonoBehaviour
     private PlayerMelee playerMelee;
     private bool playerWasAttackingLastFrame = false;
 
+    public KillCount killCount;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -337,6 +339,7 @@ public class Enemy : MonoBehaviour
             case EnemyState.Dead:
                 animator.SetBool("Dead", true);
                 animator.SetTrigger("Hurt");
+                killCount.AddKill();
                 this.enabled = false;
                 break;
             default:
