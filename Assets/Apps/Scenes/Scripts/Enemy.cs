@@ -14,7 +14,7 @@ public class Enemy : MonoBehaviour
 
     public enum EnemyState
     {
-        Idle, Patrol, Searching, Returning, Follow, Engage, Flee, Attack, Dead
+        Idle, Patrol, Searching, Returning, Follow, Engage, RushIn, Flee, Hurt, Attack, Dead
     }
 
     [Header("State Machine")]
@@ -26,9 +26,13 @@ public class Enemy : MonoBehaviour
 
     [Header("Decisions")]
     private float timeSinceLastDecision = 0f;
-    public float decisionCooldown = 1.0f;
+    public float decisionCooldown = 0.5f;
 
+    [Header("Combat")]
+    public float hurtDuration = 0.4f;
     public float fleeHealthPercentage = 0.25f;
+    [SerializeField] float playerDistance;
+    [SerializeField] private Transform fleeFrom;
 
     private EnemyHealth enemyHealth;
     private EnemyMovement enemyMovement;
@@ -40,6 +44,9 @@ public class Enemy : MonoBehaviour
 
     [SerializeField] private Animator animator;
     
+    private PlayerMelee playerMelee;
+    private bool playerWasAttackingLastFrame = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -62,24 +69,34 @@ public class Enemy : MonoBehaviour
 
     public void WasAttacked(Transform attacker)
     {
-        if (!enemyMovement.CanSeePlayer())
+        if(!enemyMovement.CanSeePlayer() && enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
+        {
+            ChangeState(EnemyState.Flee, attacker);
+        }
+        else if (!enemyMovement.CanSeePlayer() && enemyHealth.GetCurrentHealthPercentage() > fleeHealthPercentage)
         {
             ChangeState(EnemyState.Follow, attacker);
         }
-    }
-
-    public void PlayHurtAnimation()
-    {
-        animator.SetTrigger("Hurt");
-    }
+    }   
 
     void DecideNextAction(Transform player)
     {
-        if(enemyCombat.CanAttack() && Vector2.Distance(transform.position, player.position) < enemyCombat.attackRange)
+        if (enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
+        {
+            ChangeState(EnemyState.Flee, player);
+        }
+        else if (enemyCombat.CanAttack() && Vector2.Distance(transform.position, player.position) < enemyCombat.attackRange)
         {
             if(Random.value > 0.3f)
             {
                 ChangeState(EnemyState.Attack);
+            }
+        }
+        else if(enemyCombat.CanAttack() && Vector2.Distance(transform.position, player.position) > enemyCombat.attackRange)
+        {
+            if(Random.value > 0.8f)
+            {
+                ChangeState(EnemyState.RushIn);
             }
         }
     }
@@ -143,7 +160,7 @@ public class Enemy : MonoBehaviour
             case EnemyState.Follow:
                 if(enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
                 {
-                    ChangeState(EnemyState.Flee);
+                    ChangeState(EnemyState.Flee, playerTarget);
                     break;
                 }
                 
@@ -162,9 +179,27 @@ public class Enemy : MonoBehaviour
                 }
                 break;
             case EnemyState.Engage:
+                if(playerMelee == null)
+                {
+                    ChangeState(EnemyState.Searching);
+                    break;
+                }
+
+                bool playerIsAttackingNow = playerMelee.groundAttackOn;
+                
+                if(playerWasAttackingLastFrame && !playerIsAttackingNow)
+                {
+                    if (enemyCombat.CanAttack())
+                    {
+                        ChangeState(EnemyState.RushIn);
+                        playerWasAttackingLastFrame = playerIsAttackingNow;
+                        break;
+                    }
+                }
+
                 if (enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
                 {
-                    ChangeState(EnemyState.Flee);
+                    ChangeState(EnemyState.Flee, playerTarget);
                     break;
                 }
 
@@ -175,10 +210,11 @@ public class Enemy : MonoBehaviour
                 }
 
                 float distanceToPlayer = Vector2.Distance(transform.position, playerTarget.position);
-                if(distanceToPlayer > enemyCombat.optimalDistance + 1f)
+                playerDistance = distanceToPlayer;
+                if(distanceToPlayer > enemyCombat.optimalDistance + 0.1f)
                 {
                     enemyMovement.MoveTowards(playerTarget, enemyMovement.moveSpeed);
-                }else if(distanceToPlayer < enemyCombat.optimalDistance - 1f)
+                }else if(distanceToPlayer < enemyCombat.optimalDistance - 0.2f)
                 {
                     enemyMovement.MoveAwayFrom(playerTarget, enemyMovement.moveSpeed);
                 }
@@ -194,9 +230,43 @@ public class Enemy : MonoBehaviour
                     DecideNextAction(playerTarget);
                     timeSinceLastDecision = 0f;
                 }
+
+                playerWasAttackingLastFrame = playerIsAttackingNow;
+                break;
+            case EnemyState.RushIn:
+                if (enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
+                {
+                    ChangeState(EnemyState.Flee, playerTarget);
+                    break;
+                }
+
+                if (!canSeePlayer || Vector2.Distance(transform.position, playerTarget.position) > enemyCombat.disengageDistance)
+                {
+                    ChangeState(EnemyState.Follow);
+                    break;
+                }
+
+                distanceToPlayer = Vector2.Distance(transform.position, playerTarget.position);
+                playerDistance = distanceToPlayer;
+                if (distanceToPlayer > enemyCombat.optimalDistance - 0.8f)
+                {
+                    enemyMovement.MoveTowards(playerTarget, enemyMovement.followSpeed + 3);
+                }
+                else
+                {
+                    ChangeState(EnemyState.Attack);
+                }
                 break;
             case EnemyState.Flee:
-                enemyMovement.RunAwayFrom(playerTarget, enemyMovement.followSpeed);
+                distanceToPlayer = Vector2.Distance(transform.position, fleeFrom.position);
+                playerDistance = distanceToPlayer;
+                enemyMovement.RunAwayFrom(fleeFrom, enemyMovement.followSpeed);
+                if(distanceToPlayer > 15f)
+                {
+                    ChangeState(EnemyState.Idle);
+                }
+                break;
+            case EnemyState.Hurt:
                 break;
             case EnemyState.Attack:
                 break;
@@ -242,20 +312,31 @@ public class Enemy : MonoBehaviour
                 {
                     target = enemyMovement.GetSeenPlayer();
                 }
+
+                if(target != null)
+                {
+                    playerMelee = target.GetComponent<PlayerMelee>();
+                }
+
                 enemyMovement.StartFollowing(target);
                 break;
             case EnemyState.Engage:
                 break;
+            case EnemyState.RushIn:
+                break;
             case EnemyState.Flee:
+                fleeFrom = forcedTarget;
+                break;
+            case EnemyState.Hurt:
+                StartCoroutine(HurtCoroutine());
                 break;
             case EnemyState.Attack:
-                animator.SetTrigger("Attack");
-                enemyCombat.GroundAttack();
-                ChangeState(EnemyState.Engage);
+                enemyMovement.StopMoving();
+                StartCoroutine(AttackCoroutine());
                 break;
             case EnemyState.Dead:
                 animator.SetBool("Dead", true);
-                PlayHurtAnimation();
+                animator.SetTrigger("Hurt");
                 this.enabled = false;
                 break;
             default:
@@ -263,11 +344,39 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    IEnumerator HurtCoroutine()
+    {
+        animator.SetTrigger("Hurt");
+
+        yield return new WaitForSeconds(hurtDuration);
+
+        if (enemyHealth.GetAliveStatus())
+        {
+            if (enemyHealth.GetCurrentHealthPercentage() <= fleeHealthPercentage)
+            {
+                ChangeState(EnemyState.Flee, fleeFrom);
+            }
+            else
+            {
+                ChangeState(EnemyState.Engage);
+            }   
+        }
+    }
+
+    IEnumerator AttackCoroutine()
+    {
+        animator.SetTrigger("Attack");
+
+        yield return new WaitForSeconds(enemyCombat.attackRate);
+
+        ChangeState(EnemyState.Engage);
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            if(currentState != EnemyState.Follow && currentState != EnemyState.Attack && currentState != EnemyState.Dead)
+            if(currentState != EnemyState.Follow && currentState != EnemyState.Attack && currentState != EnemyState.Dead && currentState != EnemyState.Engage && currentState != EnemyState.Hurt && currentState != EnemyState.Flee)
             {
                 ChangeState(EnemyState.Follow, collision.transform);
             }

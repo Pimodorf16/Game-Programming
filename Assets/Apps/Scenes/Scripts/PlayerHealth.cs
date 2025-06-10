@@ -5,27 +5,20 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
-    private Rigidbody2D rb;
-    private CharacterController2D characterController2D;
-    
     public static event Action OnPlayerDamaged;
     public static event Action OnPlayerDeath;
 
-    public float knockbackDuration = 0.5f;
-    public float knockbackGravityScale = 3f;
-    private float originalGravityScale;
-    private bool isKnockedBack = false;
+    private PlayerMovement playerMovement;
 
     public float currentHealth;
     public float maxHealth;
     public float damageCooldown = 0.5f;
     public bool isTakingDamage = false;
-    private bool isAlive = true;
+    public bool isAlive = true;
 
     private void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        characterController2D = GetComponent<CharacterController2D>();
+        playerMovement = GetComponent<PlayerMovement>();
         currentHealth = maxHealth;
     }
 
@@ -40,47 +33,17 @@ public class PlayerHealth : MonoBehaviour
         StartCoroutine(DamageCooldown());
 
         currentHealth -= damage;
-        ApplyKnockback(knockbackForce, knockbackDirection);
+        playerMovement.ApplyKnockback(knockbackForce, knockbackDirection);
         OnPlayerDamaged?.Invoke();
 
         if(currentHealth <= 0)
         {
             currentHealth = 0;
             isAlive = false;
-            OnPlayerDeath?.Invoke();
-        }
-    }
-
-    public void ApplyKnockback(float force, Vector2 direction)
-    {
-        StopAllCoroutines();
-        StartCoroutine(KnockbackCoroutine(force, direction));
-    }
-
-    private IEnumerator KnockbackCoroutine(float force, Vector2 direction)
-    {
-        originalGravityScale = rb.gravityScale;
-        rb.gravityScale = knockbackGravityScale;
-        isKnockedBack = true;
-
-        rb.velocity = Vector2.zero;
-        rb.AddForce(direction * force, ForceMode2D.Impulse);
-
-        yield return new WaitForSeconds(knockbackDuration);
-
-        while (!characterController2D.m_Grounded)
-        {
-            yield return null;
-        }
-
-        if (isAlive == false)
-        {
-            Died();
         }
         else
         {
-            rb.gravityScale = originalGravityScale;
-            isKnockedBack = false;
+            playerMovement.animator.SetTrigger("Hurt");
         }
     }
 
@@ -90,8 +53,10 @@ public class PlayerHealth : MonoBehaviour
         isTakingDamage = false;
     }
 
-    void Died()
+    public void Died()
     {
-
+        OnPlayerDeath?.Invoke();
+        playerMovement.animator.SetBool("IsDead", true);
+        playerMovement.animator.SetTrigger("Hurt");
     }
 }

@@ -34,15 +34,13 @@ public class EnemyHealth : MonoBehaviour
 
     public void TakeDamage(float damage, float knockbackForce, Vector2 knockbackDirection, Transform attacker)
     {
-        if (isTakingDamage)
+        if (isTakingDamage || enemy.currentState == Enemy.EnemyState.Dead)
         {
             return;
         }
 
         isTakingDamage = true;
         StartCoroutine(DamageCooldown());
-
-        if (enemy.currentState == Enemy.EnemyState.Dead) return;
 
         currentHealth -= damage;
         enemyMovement.ApplyKnockback(knockbackForce, knockbackDirection);
@@ -54,7 +52,7 @@ public class EnemyHealth : MonoBehaviour
         }
         else
         {
-            enemy.PlayHurtAnimation();
+            enemy.ChangeState(Enemy.EnemyState.Hurt);
         }
     }
 

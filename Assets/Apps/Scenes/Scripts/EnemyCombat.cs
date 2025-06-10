@@ -14,9 +14,10 @@ public class EnemyCombat : MonoBehaviour
     public bool canAttack = true;
     public float attackRadius = 1f;
     public float attackRange = 1f;
-    public float attackRate = 1f;
+    public float attackRate = 0.4f;
     public int attackDamage = 1;
     public float attackKnockbackForce = 2f;
+    private float lastAttackTime = -10f;
     public LayerMask playerMask;
 
     public bool isRanged = false;
@@ -25,11 +26,13 @@ public class EnemyCombat : MonoBehaviour
 
     public bool CanAttack()
     {
-        return canAttack;
+        return Time.time >= lastAttackTime + attackRate;
     }
 
     public void GroundAttack()
     {
+        lastAttackTime = Time.time;
+        
         Collider2D[] playerInRange = Physics2D.OverlapCircleAll(groundAttackOrigin.position, attackRadius, playerMask);
         foreach (var player in playerInRange)
         {

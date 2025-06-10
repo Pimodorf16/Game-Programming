@@ -9,7 +9,10 @@ public class PlayerMovement : MonoBehaviour
     public InteractionSystem interactionSystem;
 
     public Animator animator;
-    
+    private Rigidbody2D rb;
+    private CharacterController2D characterController2D;
+    private PlayerHealth playerHealth;
+
     public InputActionReference move;
     public InputActionReference jump;
 
@@ -23,6 +26,18 @@ public class PlayerMovement : MonoBehaviour
     public bool landing = false;
     public bool selecting = false;
     public bool groundAttacking = false;
+
+    public float knockbackDuration = 0.5f;
+    public float knockbackGravityScale = 3f;
+    private float originalGravityScale;
+    public bool isKnockedBack = false;
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        characterController2D = GetComponent<CharacterController2D>();
+        playerHealth = GetComponent<PlayerHealth>();
+    }
 
     // Update is called once per frame
     void Update()
@@ -161,5 +176,38 @@ public class PlayerMovement : MonoBehaviour
         }
         yield return new WaitForSeconds(0.1f);
         selecting = false;
+    }
+
+    public void ApplyKnockback(float force, Vector2 direction)
+    {
+        StopAllCoroutines();
+        StartCoroutine(KnockbackCoroutine(force, direction));
+    }
+
+    private IEnumerator KnockbackCoroutine(float force, Vector2 direction)
+    {
+        originalGravityScale = rb.gravityScale;
+        rb.gravityScale = knockbackGravityScale;
+        isKnockedBack = true;
+
+        rb.velocity = Vector2.zero;
+        rb.AddForce(direction * force, ForceMode2D.Impulse);
+
+        yield return new WaitForSeconds(knockbackDuration);
+
+        while (!characterController2D.m_Grounded)
+        {
+            yield return null;
+        }
+
+        if (playerHealth.isAlive == false)
+        {
+            playerHealth.Died();
+        }
+        else
+        {
+            rb.gravityScale = originalGravityScale;
+            isKnockedBack = false;
+        }
     }
 }

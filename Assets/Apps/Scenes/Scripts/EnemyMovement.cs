@@ -102,8 +102,6 @@ public class EnemyMovement : MonoBehaviour
 
     private void Update()
     {
-        animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
-        
         DrawDebugRays();
     }
 
@@ -169,6 +167,7 @@ public class EnemyMovement : MonoBehaviour
         isMovingToPosition = false;
         followTarget = null;
         rb.velocity = new Vector2(0, rb.velocity.y);
+        animator.SetFloat("Speed", 0f);
     }
 
     public void StartPatrolling()
@@ -245,7 +244,7 @@ public class EnemyMovement : MonoBehaviour
         float moveDirection = isFacingRight ? 1 : -1;
         Move(moveSpeed * moveDirection * Time.fixedDeltaTime);
 
-        //alt//rb.velocity = new Vector2(moveSpeed * moveDirection * Time.fixedDeltaTime, rb.velocity.y);
+        animator.SetFloat("Speed", Mathf.Abs(moveSpeed * moveDirection));
     }
 
     void MoveTowardsDestination()
@@ -260,7 +259,7 @@ public class EnemyMovement : MonoBehaviour
         float moveDirection = (destination.x > transform.position.x) ? 1 : -1;
 
         Move(moveSpeed * moveDirection * Time.fixedDeltaTime);
-        //alt//rb.velocity = new Vector2(moveDirection * moveSpeed * Time.fixedDeltaTime, rb.velocity.y);
+        animator.SetFloat("Speed", Mathf.Abs(moveSpeed * moveDirection));
 
         if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
         {
@@ -282,9 +281,9 @@ public class EnemyMovement : MonoBehaviour
             float moveDirection = (followTarget.position.x > transform.position.x) ? 1 : -1;
 
             Move(followSpeed * moveDirection * Time.fixedDeltaTime);
-            //alt//rb.velocity = new Vector2(moveDirection * followSpeed * Time.fixedDeltaTime, rb.velocity.y);
+            animator.SetFloat("Speed", Mathf.Abs(followSpeed * moveDirection));
 
-            if((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
+            if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
             {
                 Flip();
             }
@@ -305,6 +304,7 @@ public class EnemyMovement : MonoBehaviour
             float moveDirection = (target.position.x > transform.position.x) ? 1 : -1;
 
             Move(speed * moveDirection * Time.fixedDeltaTime);
+            animator.SetFloat("Speed", Mathf.Abs(speed * moveDirection));
 
             if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
             {
@@ -327,6 +327,7 @@ public class EnemyMovement : MonoBehaviour
             float moveDirection = (target.position.x < transform.position.x) ? 1 : -1;
 
             Move(speed * moveDirection * Time.fixedDeltaTime);
+            animator.SetFloat("Speed", Mathf.Abs(speed * moveDirection));
 
             if ((moveDirection < 0 && !isFacingRight) || (moveDirection > 0 && isFacingRight))
             {
@@ -362,6 +363,7 @@ public class EnemyMovement : MonoBehaviour
             float moveDirection = (target.position.x < transform.position.x) ? 1 : -1;
 
             Move(speed * moveDirection * Time.fixedDeltaTime);
+            animator.SetFloat("Speed", Mathf.Abs(speed * moveDirection));
 
             if ((moveDirection > 0 && !isFacingRight) || (moveDirection < 0 && isFacingRight))
             {

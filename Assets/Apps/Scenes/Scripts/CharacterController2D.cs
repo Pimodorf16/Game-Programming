@@ -163,7 +163,6 @@ public class CharacterController2D : MonoBehaviour
 		}
 	}
 
-
 	private void Flip()
 	{
 		// Switch the way the player is labelled as facing.
@@ -173,5 +172,10 @@ public class CharacterController2D : MonoBehaviour
 		Vector3 theScale = transform.localScale;
 		theScale.x *= -1;
 		transform.localScale = theScale;
+	}
+
+	private void OnDrawGizmos()
+	{
+		Gizmos.DrawWireSphere(m_GroundCheck.position, k_GroundedRadius);
 	}
 }

@@ -4,14 +4,38 @@ using UnityEngine;
 
 public class AnimatorFunctions : MonoBehaviour
 {
-    void GroundAttackDamageOn()
+    private PlayerMelee playerMelee;
+    private EnemyCombat enemyCombat;
+
+    private void Awake()
     {
-        FindObjectOfType<PlayerMelee>().groundAttackOn = true;
+        playerMelee = GetComponent<PlayerMelee>();
+        enemyCombat = GetComponent<EnemyCombat>();
     }
 
-    void GroundAttackDamagedOff()
+    void PlayerGroundAttackDamageOn()
     {
-        FindObjectOfType<PlayerMelee>().groundAttackOn = false;
+        if(playerMelee != null)
+        {
+            playerMelee.groundAttackOn = true;
+        }
+    }
+
+    void PlayerGroundAttackDamagedOff()
+    {
+        if (playerMelee != null)
+        {
+            playerMelee.groundAttackOn = false;
+        }
         Debug.Log("DamageOFF");
+    }
+
+
+    void EnemyGroundAttack()
+    {
+        if (enemyCombat != null)
+        {
+            enemyCombat.GroundAttack();
+        }
     }
 }

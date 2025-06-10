@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 public class PlayerMelee : MonoBehaviour
 {
     public PlayerMovement playerMovement;
+    public PlayerHealth playerHealth;
     public AnimatorFunctions animatorFunctions;
     public Animator playerAnimator;
     public InputActionReference attack;
@@ -23,6 +24,11 @@ public class PlayerMelee : MonoBehaviour
 
     public bool groundAttackOn = false;
 
+    private void Start()
+    {
+        playerHealth = GetComponent<PlayerHealth>();
+    }
+
     private void OnEnable()
     {
         attack.action.started += Attack;
@@ -35,7 +41,7 @@ public class PlayerMelee : MonoBehaviour
 
     void Attack(InputAction.CallbackContext obj)
     {
-        if (playerMovement.onAir == false && inCooldown == false && playerMovement.groundAttacking == false)
+        if (playerMovement.onAir == false && inCooldown == false && playerMovement.groundAttacking == false && playerMovement.isKnockedBack == false && playerHealth.isTakingDamage == false && playerHealth.isAlive == true)
         {
             GroundAttack();
         }
