@@ -7,9 +7,10 @@ public class PlayerMovement : MonoBehaviour, IDataPersistence
 {
     public CharacterController2D controller;
     public InteractionSystem interactionSystem;
+    public LevelManager levelManager;
 
     public Animator animator;
-    private Rigidbody2D rb;
+    public Rigidbody2D rb;
     private CharacterController2D characterController2D;
     private PlayerHealth playerHealth;
 
@@ -52,7 +53,12 @@ public class PlayerMovement : MonoBehaviour, IDataPersistence
     // Update is called once per frame
     void Update()
     {
-        if(interactionSystem.inDialogue == false && groundAttacking == false)
+        if(characterController2D.m_Grounded == true)
+        {
+            onAir = false;
+        }
+
+        if(interactionSystem.inDialogue == false && groundAttacking == false && playerHealth.isAlive == true)
         {
             moveDirection = move.action.ReadValue<Vector2>();
             movement = moveDirection.x * moveSpeed;
@@ -219,5 +225,10 @@ public class PlayerMovement : MonoBehaviour, IDataPersistence
             rb.gravityScale = originalGravityScale;
             isKnockedBack = false;
         }
+    }
+
+    public void LoadMenu()
+    {
+        levelManager.LoadScene("MainMenu");
     }
 }

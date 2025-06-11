@@ -32,7 +32,7 @@ public class Enemy : MonoBehaviour
     public float hurtDuration = 0.4f;
     public float fleeHealthPercentage = 0.25f;
     [SerializeField] float playerDistance;
-    [SerializeField] private Transform fleeFrom;
+    [SerializeField] private Transform fleeFrom = null;
 
     private EnemyHealth enemyHealth;
     private EnemyMovement enemyMovement;
@@ -327,7 +327,10 @@ public class Enemy : MonoBehaviour
             case EnemyState.RushIn:
                 break;
             case EnemyState.Flee:
-                fleeFrom = forcedTarget;
+                if(fleeFrom == null)
+                {
+                    fleeFrom = forcedTarget;
+                }
                 break;
             case EnemyState.Hurt:
                 StartCoroutine(HurtCoroutine());

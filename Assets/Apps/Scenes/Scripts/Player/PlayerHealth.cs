@@ -58,5 +58,11 @@ public class PlayerHealth : MonoBehaviour
         OnPlayerDeath?.Invoke();
         playerMovement.animator.SetBool("IsDead", true);
         playerMovement.animator.SetTrigger("Hurt");
+        playerMovement.rb.velocity = Vector2.zero;
+        GetComponent<Collider2D>().enabled = false;
+        playerMovement.rb.bodyType = RigidbodyType2D.Static;
+        Debug.Log("Died");
+        playerMovement.LoadMenu();
+        Debug.Log("LoadMenu");
     }
 }

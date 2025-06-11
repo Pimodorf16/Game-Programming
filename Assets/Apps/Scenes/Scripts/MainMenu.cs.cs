@@ -9,6 +9,8 @@ public class MainMenu : MonoBehaviour
     [Header("Menu Buttons")]
     [SerializeField] private Button newGameButton;
     [SerializeField] private Button continueGameButton;
+
+    public LevelManager levelManager;
     
     private void Start()
     {
@@ -31,14 +33,14 @@ public class MainMenu : MonoBehaviour
         
         DataPersistenceManager.instance.NewGame();
 
-        LevelManager.Instance.LoadScene("Game");
+        levelManager.LoadScene("Game");
     }
 
     public void ContinueGame()
     {
         DisableMenuButtons();
 
-        LevelManager.Instance.LoadScene("Game");
+        levelManager.LoadScene("Game");
     }
 
     private void DisableMenuButtons()
